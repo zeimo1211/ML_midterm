@@ -1,3 +1,5 @@
+import os
+os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 import jieba
 import torch
 from torch.utils.data import DataLoader, TensorDataset, RandomSampler, SequentialSampler
