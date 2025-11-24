@@ -1,10 +1,78 @@
+import jieba
 import numpy as np
-import common
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.metrics import precision_score, recall_score, f1_score
+import warnings
 
-# 区别说明：
-# - 自定义 ImprovedDecisionTreeClassifier，使用信息增益 (Gini 在 32_handwritten_dt.py 中)。
-# - 手动实现树构建，添加 max_depth 和 min_samples_split。
-# - 相比 "hd_dt.py"：使用信息增益而非 Gini。
+warnings.filterwarnings("ignore")
+
+# 加载停用词
+stopwords = set()
+try:
+    with open("stopwords.txt", "r", encoding="utf-8") as f:
+        for line in f:
+            word = line.strip()
+            if word:
+                stopwords.add(word)
+except FileNotFoundError:
+    print("警告：停用词文件未找到，将不使用停用词")
+
+
+# 加载数据函数
+def load_data(filepath):
+    data, labels = [], []
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split(",")
+                if len(parts) == 3:
+                    data.append(parts[2])
+                    labels.append(int(parts[1]))
+    except Exception as e:
+        print(f"加载数据时出错: {e}")
+    return data, labels
+
+
+# 加载训练和测试数据
+train_data, train_labels = load_data("train.txt")
+test_data, test_labels = load_data("test.txt")
+
+# 检查数据是否为空
+if not train_data or not test_data:
+    print("错误：训练数据或测试数据为空")
+    exit()
+
+
+# 分词、去除停用词
+def preprocess_data(data):
+    seg_data = []
+    for text in data:
+        try:
+            seg_list = [word for word in jieba.cut(text) if word not in stopwords and word.strip()]
+            seg_data.append(" ".join(seg_list))
+        except Exception as e:
+            print(f"分词时出错: {e}")
+            seg_data.append("")
+    return seg_data
+
+
+train_seg = preprocess_data(train_data)
+test_seg = preprocess_data(test_data)
+
+# 构建TF-IDF特征
+vectorizer = TfidfVectorizer()
+train_features = vectorizer.fit_transform(train_seg)
+test_features = vectorizer.transform(test_seg)
+
+# 特征选择 - 安全地设置k值
+k = min(20, train_features.shape[1])
+selector = SelectKBest(chi2, k=k)
+train_features_selected = selector.fit_transform(train_features, train_labels)
+test_features_selected = selector.transform(test_features)
+
+print(f"特征选择后的特征数量: {train_features_selected.shape[1]}")
+
 
 # 完整的决策树节点类
 class TreeNode:
@@ -137,20 +205,19 @@ class ImprovedDecisionTreeClassifier:
             predictions.append(pred)
         return np.array(predictions)
 
-# 使用 common 处理数据和特征
-stopwords = common.load_stopwords()
-train_data, train_labels = common.load_data("train.txt")
-test_data, test_labels = common.load_data("test.txt")
 
-train_seg, _ = common.preprocess_data(train_data, stopwords, use_textrank=False)  # 无 TextRank
-test_seg, _ = common.preprocess_data(test_data, stopwords, use_textrank=False)
+# 使用改进的决策树类训练和预测
+try:
+    improved_tree = ImprovedDecisionTreeClassifier(max_depth=10, min_samples_split=50)
+    improved_tree.fit(train_features_selected, train_labels)
+    predictions = improved_tree.predict(test_features_selected)
 
-train_features, test_features = common.extract_features(
-    train_seg, [""] * len(train_seg), test_seg, [""] * len(test_seg), train_labels, k=20
-)
-
-dt = ImprovedDecisionTreeClassifier(max_depth=10, min_samples_split=50)
-dt.fit(train_features, train_labels)
-predictions = dt.predict(test_features)
-
-common.evaluate_model(test_labels, predictions, "Improved DT")
+    # 计算和打印性能指标
+    precision = precision_score(test_labels, predictions)
+    recall = recall_score(test_labels, predictions)
+    f1 = f1_score(test_labels, predictions)
+    print("Precision:", precision)
+    print("Recall:", recall)
+    print("F1-score:", f1)
+except Exception as e:
+    print(f"训练或预测过程中出错: {e}")
