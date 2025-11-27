@@ -67,16 +67,13 @@ test_features_selected = selector.transform(test_features)
 feature_words = [vectorizer.get_feature_names_out()[idx] for idx in selector.get_support(indices=True)]
 print("选中特征词：", feature_words)
 
-# =============================================================================
-# Cell 2: 逻辑回归 (Scikit-learn 标准实现)
-# =============================================================================
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_score, recall_score, f1_score
 
 # 1. 模型配置与训练
-# -----------------------------------------------------------------------------
+
 lr_model = LogisticRegression(
     max_iter=1000, 
     penalty='l2', 
@@ -86,19 +83,19 @@ lr_model = LogisticRegression(
 lr_model.fit(train_features_selected, np.array(train_labels))
 
 # 2. 模型推理
-# -----------------------------------------------------------------------------
+
 # 获取预测类别和正类概率
 lr_pred = lr_model.predict(test_features_selected)
 lr_proba = lr_model.predict_proba(test_features_selected)[:, 1]
 
 # 3. 指标计算
-# -----------------------------------------------------------------------------
+
 precision = precision_score(test_labels, lr_pred)
 recall = recall_score(test_labels, lr_pred)
 f1 = f1_score(test_labels, lr_pred)
 
 # 4. 结果输出
-# -----------------------------------------------------------------------------
+
 print("=" * 40)
 print(f"【模型 1】Scikit-learn 逻辑回归")
 print("-" * 40)

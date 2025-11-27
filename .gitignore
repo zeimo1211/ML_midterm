@@ -1,2 +1,5 @@
-result/
 .ignore/
+painting_full.ipynb
+result/bar_1_sklearn.png
+result/bar_2_manual_basic.png
+result/bar_3_optimized.png

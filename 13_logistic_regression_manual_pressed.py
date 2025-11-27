@@ -67,15 +67,12 @@ test_features_selected = selector.transform(test_features)
 feature_words = [vectorizer.get_feature_names_out()[idx] for idx in selector.get_support(indices=True)]
 print("选中特征词：", feature_words)
 
-# =============================================================================
-# Cell 4: 优化逻辑回归 (Adam 优化器 + ElasticNet 正则化)
-# =============================================================================
+
 
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score
 
 
-# -----------------------------------------------------------------------------
 # 将稀疏矩阵转换为稠密数组以进行矩阵运算
 X_train = train_features_selected.toarray()
 X_test = test_features_selected.toarray()
@@ -83,7 +80,7 @@ y_train = np.array(train_labels, dtype=np.float64)
 y_test = np.array(test_labels, dtype=np.float64)
 
 # 1. 模型定义
-# -----------------------------------------------------------------------------
+
 class OptimizedLogisticRegression:
     def __init__(self, learning_rate=0.01, max_iter=1000, batch_size=32, 
                  alpha=0.0001, l1_ratio=0.5, verbose=False):
@@ -174,7 +171,7 @@ class OptimizedLogisticRegression:
         return (self.predict_proba(X) >= threshold).astype(int)
 
 # 2. 模型训练与推理
-# -----------------------------------------------------------------------------
+
 
 # 配置优化后的超参数
 opt_model = OptimizedLogisticRegression(
@@ -188,7 +185,7 @@ opt_model = OptimizedLogisticRegression(
 opt_model.fit(X_train, y_train)
 
 # 3. 预测与评估 (包含阈值调整策略)
-# -----------------------------------------------------------------------------
+
 # 提升阈值至 0.5 以优化 Precision
 target_threshold = 0.5 
 opt_pred = opt_model.predict(X_test, threshold=target_threshold)
@@ -198,7 +195,7 @@ recall = recall_score(y_test, opt_pred)
 f1 = f1_score(y_test, opt_pred)
 
 # 4. 结果输出
-# -----------------------------------------------------------------------------
+
 print("=" * 40)
 print(f"【模型 3】优化逻辑回归 (Adam + ElasticNet)")
 print("-" * 40)

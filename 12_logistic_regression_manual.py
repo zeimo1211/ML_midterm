@@ -67,15 +67,11 @@ test_features_selected = selector.transform(test_features)
 feature_words = [vectorizer.get_feature_names_out()[idx] for idx in selector.get_support(indices=True)]
 print("选中特征词：", feature_words)
 
-# =============================================================================
-# Cell 3: 自编写逻辑回归 (基础梯度下降 BGD)
-# =============================================================================
-
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score
 
 # 1. 数据准备
-# -----------------------------------------------------------------------------
+
 # 将稀疏矩阵转换为稠密数组以进行矩阵运算
 X_train = train_features_selected.toarray()
 X_test = test_features_selected.toarray()
@@ -83,7 +79,7 @@ y_train = np.array(train_labels, dtype=np.float64)
 y_test = np.array(test_labels, dtype=np.float64)
 
 # 2. 模型定义
-# -----------------------------------------------------------------------------
+
 class ManualLogisticRegression:
     def __init__(self, learning_rate=0.1, max_iter=1000, reg_lambda=1.0, verbose=False):
         self.lr = learning_rate
@@ -131,7 +127,7 @@ class ManualLogisticRegression:
         return (self.predict_proba(X) >= threshold).astype(int)
 
 # 3. 模型训练与推理
-# -----------------------------------------------------------------------------
+
 manual_lr = ManualLogisticRegression(
     learning_rate=0.1, 
     max_iter=1000, 
@@ -143,7 +139,7 @@ manual_lr.fit(X_train, y_train)
 manual_pred = manual_lr.predict(X_test)
 
 # 4. 结果输出
-# -----------------------------------------------------------------------------
+
 precision = precision_score(y_test, manual_pred)
 recall = recall_score(y_test, manual_pred)
 f1 = f1_score(y_test, manual_pred)
