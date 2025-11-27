@@ -2,10 +2,11 @@ import jieba
 import jieba.analyse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectKBest, chi2
-from sklearn.naive_bayes import MultinomialNB  # 导入朴素贝叶斯模型
 from sklearn.metrics import precision_score, recall_score, f1_score
 import warnings
 import numpy as np
+
+# 自编写贝叶斯+数据平滑
 
 warnings.filterwarnings("ignore")
 
@@ -68,7 +69,7 @@ combined_train_features = [seg + " " + textrank for seg, textrank in zip(train_s
 combined_test_features = [seg + " " + textrank for seg, textrank in zip(test_seg, test_textrank)]
 
 # 特征选择
-vectorizer = TfidfVectorizer()
+vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_df=0.95, min_df=5)
 train_features = vectorizer.fit_transform(combined_train_features)
 test_features = vectorizer.transform(combined_test_features)
 
@@ -97,12 +98,10 @@ class HandwrittenMultinomialNB:
     def fit(self, X, y):
         # 转换为稠密数组以便处理
         if hasattr(X, 'toarray'):
-            X_dense = X.toarray()
-        else:
-            X_dense = X
+            X = X.toarray()
 
         # 计算每个类别的先验概率
-        m, n = X_dense.shape
+        m, n = X.shape
         self.classes_ = np.unique(y)
         n_classes = len(self.classes_)
 
@@ -111,8 +110,7 @@ class HandwrittenMultinomialNB:
 
         for i, cls in enumerate(self.classes_):
             # 获取属于当前类别的样本
-            mask = (y == cls)
-            X_cls = X_dense[mask]
+            X_cls = X[y == cls]
             # 计算特征计数和类别计数
             self.feature_count_[i, :] = X_cls.sum(axis=0)
             self.class_count_[i] = X_cls.shape[0]
@@ -129,18 +127,15 @@ class HandwrittenMultinomialNB:
     def predict(self, X):
         # 转换为稠密数组以便处理
         if hasattr(X, 'toarray'):
-            X_dense = X.toarray()
-        else:
-            X_dense = X
+            X = X.toarray()
 
         # 计算每个样本在每个类别下的对数概率
-        jll = X_dense.dot(self.feature_log_prob_.T) + self.class_log_prior_
+        jll = X.dot(self.feature_log_prob_.T) + self.class_log_prior_
         # 返回概率最大的类别
         return self.classes_[np.argmax(jll, axis=1)]
 
 
 # 使用手写模型替代MultinomialNB
-print("训练手写朴素贝叶斯模型...")
 nb_classifier = HandwrittenMultinomialNB(alpha=1.0)
 nb_classifier.fit(train_features_selected, train_labels)
 nb_predictions = nb_classifier.predict(test_features_selected)
@@ -150,23 +145,6 @@ precision = precision_score(test_labels, nb_predictions)
 recall = recall_score(test_labels, nb_predictions)
 f1 = f1_score(test_labels, nb_predictions)
 
-print("手写朴素贝叶斯模型性能:")
 print("Precision:", precision)
 print("Recall:", recall)
 print("F1-score:", f1)
-
-# 与sklearn的MultinomialNB比较
-print("\n训练sklearn朴素贝叶斯模型...")
-sklearn_nb = MultinomialNB(alpha=1.0)
-sklearn_nb.fit(train_features_selected, train_labels)
-sklearn_predictions = sklearn_nb.predict(test_features_selected)
-
-# 性能指标
-sklearn_precision = precision_score(test_labels, sklearn_predictions)
-sklearn_recall = recall_score(test_labels, sklearn_predictions)
-sklearn_f1 = f1_score(test_labels, sklearn_predictions)
-
-print("Sklearn朴素贝叶斯模型性能:")
-print("Precision:", sklearn_precision)
-print("Recall:", sklearn_recall)
-print("F1-score:", sklearn_f1)

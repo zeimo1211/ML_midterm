@@ -26,7 +26,7 @@ def format_time(elapsed):
 
 # 加载停用词
 stopwords = set()
-with open("stopwords.txt", "r", encoding="utf-8") as f:
+with open("../stopwords.txt", "r", encoding="utf-8") as f:
     for line in f:
         stopwords.add(line.strip())
 
@@ -41,8 +41,8 @@ def load_data(file_path):
                 labels.append(int(parts[1]))
     return data, labels
 
-train_data, train_labels = load_data("train.txt")
-test_data, test_labels = load_data("test.txt")
+train_data, train_labels = load_data("../train.txt")
+test_data, test_labels = load_data("../test.txt")
 
 # 设置BERT
 model_name = 'bert-base-chinese'

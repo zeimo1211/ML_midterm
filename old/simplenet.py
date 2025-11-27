@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore")
 
 # 加载停用词
 stopwords = set()
-with open("stopwords.txt", "r", encoding="utf-8") as f:
+with open("../stopwords.txt", "r", encoding="utf-8") as f:
     for line in f:
         stopwords.add(line.strip())
 
@@ -25,8 +25,8 @@ def load_data(filepath):
     return data, labels
 
 # 加载训练和测试数据
-train_data, train_labels = load_data("train1.txt")
-test_data, test_labels = load_data("test.txt")
+train_data, train_labels = load_data("../train1.txt")
+test_data, test_labels = load_data("../test.txt")
 
 # 分词、去除停用词及提取TextRank关键词
 def preprocess_data(data, use_textrank=True):
